@@ -27,7 +27,7 @@ class BuildScriptBuilder {
                 line("ext.kotlin_version = ${JsonOutput.toJson(kotlinVersion)}")
 
                 repositories()
-                scriptClassPath.add("com.epam.drill:drill-gradle-plugin:0.1")
+                scriptClassPath.add("com.epam.drill:drill-gradle-plugin:0.2.0")
                 block("dependencies") {
                     dependencies("classpath", scriptClassPath)
                 }
@@ -118,21 +118,6 @@ fun BuildScriptBuilder.Builder.block(name: String, block: () -> Unit) {
     block()
     level--
     line("}")
-}
-
-
-fun String.runCommand(workingDir: File) {
-    ProcessBuilder(*split(" ").toTypedArray())
-            .directory(workingDir)
-            .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-            .redirectError(ProcessBuilder.Redirect.INHERIT)
-            .start()
-            .waitFor(60, TimeUnit.MINUTES)
-}
-
-
-fun Git.tag(name: String) {
-    "git tag $name".runCommand(this.repository.directory.parentFile)
 }
 
 fun Git.randomCommit() {

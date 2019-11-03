@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.3.50"
+    `kotlin-dsl`
     `java-gradle-plugin`
     `maven-publish`
 }
@@ -20,4 +20,28 @@ dependencies {
 
 tasks.test {
     dependsOn("publishToMavenLocal")
+}
+
+publishing {
+    repositories {
+        maven {
+            url = uri("http://oss.jfrog.org/oss-release-local")
+            credentials {
+                username =
+                        if (project.hasProperty("bintrayUser"))
+                            project.property("bintrayUser").toString()
+                        else System.getenv("BINTRAY_USER")
+                password =
+                        if (project.hasProperty("bintrayApiKey"))
+                            project.property("bintrayApiKey").toString()
+                        else System.getenv("BINTRAY_API_KEY")
+            }
+        }
+    }
+
+//    publications {
+//        create<MavenPublication>("coverageZip") {
+//            artifact(tasks["distZip"])
+//        }
+//    }
 }
