@@ -25,7 +25,7 @@ class VersionRetriever : Plugin<Project> {
                     logger.info(it.name)
                 }
 
-                val lastTag = allTags.sortedBy { it.getSnapShot().lastModifiedInstant().toEpochMilli() }.lastOrNull { tagVersionRegex.matches(it.name) }
+                val lastTag = allTags.filter { tagVersionRegex.matches(it.name) }.maxBy { it.getSnapShot().lastModifiedInstant().toEpochMilli() }
                 logger.info(lastTag?.name)
                 if (lastTag != null) {
                     val (_, major, minor, patch) = tagVersionRegex.matchEntire(lastTag.name)!!.groupValues
