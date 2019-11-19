@@ -1,5 +1,6 @@
 package com.epam.drill
 
+import com.epam.drill.version.SemVer
 import com.epam.drill.version.tag
 import org.eclipse.jgit.api.Git
 import org.gradle.testkit.runner.GradleRunner
@@ -11,6 +12,7 @@ import org.junit.rules.TestName
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import java.io.File
+import java.util.*
 import kotlin.test.assertTrue
 
 
@@ -68,52 +70,42 @@ class VersionRetrieverTest {
 
     @Test
     fun `release version equals of last tag with zero distance`() {
-
-//        git.randomCommit()
-//        git.tag("v0.1.0")
-//        Thread.sleep(1500)
-//        git.randomCommit()
-//        git.tag("v0.1.3")
-//        Thread.sleep(1500)
-//        git.randomCommit()
-//        git.tag("v0.1.2")
-//        git.randomCommit()
+        git.randomCommit()
+        git.tag("v0.1.0")
+        Thread.sleep(1500)
+        git.randomCommit()
+        git.tag("0.1.3")
+        Thread.sleep(1500)
+        git.randomCommit()
+        git.tag("0.1.2")
+        git.randomCommit()
+        git.tag("0.1.11")
         val output = GradleRunner.create()
                 .withProjectDir(projectDir.root)
-                .withArguments("incrementVersion")
-                .withGradleVersion("5.6.1")
+                .withArguments("build")
+                .withGradleVersion("5.6.2")
                 .withPluginClasspath()
                 .withDebug(true)
                 .build().output
         println(output)
-        output.contains("version: '0.1.2'")
-
+        assertTrue(output.contains("version: '0.1.11'"))
     }
 
     @Test
-    fun `increment minor verison and added snapshot prefix when commit distance != 0`() {
-        git.randomCommit()
-        assertTrue {
-            GradleRunner.create()
-                    .withProjectDir(projectDir.root)
-                    .withArguments("build")
-                    .withGradleVersion("5.6.1")
-                    .withPluginClasspath()
-                    .withDebug(true)
-                    .build().output.contains("version: '${firstTag.copy(minor = firstTag.minor.inc()).toVersion()}-SNAPSHOT'")
+    fun `max version equals of last tag`() {
+        val tagVersionRegex = Regex("(\\d+)\\.(\\d+)\\.(\\d+)")
+        val listOf = mutableListOf(
+                "0.0.1",
+                "0.2.1",
+                "0.2.100",
+                "0.2.10",
+                "0.2.2"
+        )
+        val map = listOf.map {
+            val (_, major, minor, patch) = tagVersionRegex.matchEntire(it)!!.groupValues
+            SemVer(major.toInt(), minor.toInt(), patch.toInt())
         }
+        Collections.sort(map)
+        print(map)
     }
-
-
-}
-
-data class SemVer(val major: Int, val minor: Int, val patch: Int) {
-    fun toTag(): String {
-        return "v$major.$minor.$patch"
-    }
-
-    fun toVersion(): String {
-        return "$major.$minor.$patch"
-    }
-
 }
