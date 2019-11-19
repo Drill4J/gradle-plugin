@@ -27,7 +27,7 @@ class BuildScriptBuilder {
                 line("ext.kotlin_version = ${JsonOutput.toJson(kotlinVersion)}")
 
                 repositories()
-                scriptClassPath.add("com.epam.drill:drill-gradle-plugin:0.2.0")
+                scriptClassPath.add("com.epam.drill:drill-gradle-plugin:0.4.0")
                 block("dependencies") {
                     dependencies("classpath", scriptClassPath)
                 }

@@ -2,13 +2,8 @@ package com.epam.drill.version
 
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.internal.storage.file.FileRepository
-import org.eclipse.jgit.internal.storage.file.FileSnapshot
-import org.eclipse.jgit.lib.Constants
-import org.eclipse.jgit.lib.Ref
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.kotlin.dsl.invoke
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -20,20 +15,26 @@ class VersionRetriever : Plugin<Project> {
         target.run {
             val git = Git.wrap(FileRepository(target.rootProject.rootDir.resolve(".git")))
             try {
-                val allTags = git.tagList().call()
-                allTags.forEach {
-                    logger.info(it.name)
-                }
+                val sortedSemVerList = git.tagList().call()
+                        .filter { tagVersionRegex.matches(it.name) }
+                        .map {
+                            val (_, major, minor, patch) = tagVersionRegex.matchEntire(it.name)!!.groupValues
+                            SemVer(major.toInt(), minor.toInt(), patch.toInt())
+                        }.sortedDescending()
 
-                val lastTag = allTags.filter { tagVersionRegex.matches(it.name) }.maxBy { it.getSnapShot().lastModifiedInstant().toEpochMilli() }
-                logger.info(lastTag?.name)
+                sortedSemVerList.forEach { logger.info(it.toString()) }
+
+                val lastTag = sortedSemVerList.firstOrNull()
+
+                logger.info(lastTag.toString())
                 if (lastTag != null) {
-                    val (_, major, minor, patch) = tagVersionRegex.matchEntire(lastTag.name)!!.groupValues
-                    target.version = "$major.$minor.$patch"
+                    target.version = lastTag
                 } else target.version = "0.1.0"
             } catch (ex: Exception) {
-                logger.error("xx", ex)
+
                 target.version = "0.1.0"
+                logger.error("Something went wrong. $ex \n" +
+                        "Version will be changed to ${target.version}")
             }
         }
     }
@@ -53,12 +54,21 @@ fun String.runCommand(workingDir: File) {
             .waitFor(60, TimeUnit.MINUTES)
 }
 
-fun Git.getTagDistance(tag: Ref) = this.log()
-        .addRange(tag.objectId, this.repository.findRef(Constants.HEAD).objectId).call().count()
+
+data class SemVer(val major: Int, val minor: Int, val patch: Int) : Comparable<SemVer> {
+    override fun compareTo(other: SemVer) = when {
+        major != other.major -> major - other.major
+        minor != other.minor -> minor - other.minor
+        else -> patch - other.patch
+    }
 
 
-fun Ref.getSnapShot(): FileSnapshot {
-    val getSnapShot = this::class.java.methods.first { it.name == ::getSnapShot.name }
-    getSnapShot.isAccessible = true
-    return getSnapShot(this) as FileSnapshot
+    fun toTag(): String {
+        return "$major.$minor.$patch"
+    }
+
+    override fun toString(): String {
+        return "$major.$minor.$patch"
+    }
+
 }
