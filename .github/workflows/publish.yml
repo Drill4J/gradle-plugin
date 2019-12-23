@@ -10,11 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+      - name: Gradle Cache
+        id: cache-gradle
+        uses: actions/cache@v1
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Gradle Build Cache
+        id: cache-build
+        uses: actions/cache@v1
+        with:
+          path: ./build-cache
+          key: ${{ runner.os }}-build-${{ hashFiles('**/*.gradle.kts') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
       - name: Check
         run: gradle build
       - name: Publish
         run: |
-          gradle -si publish
+          gradle publish
         env:
-          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
-          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+          BINTRAY_USER: ${{ secrets.GH_USERNAME }}
+          BINTRAY_API_KEY: ${{ secrets.GH_API_KEY }}

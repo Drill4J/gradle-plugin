@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
@@ -19,27 +21,33 @@ dependencies {
     testImplementation(gradleTestKit())
 }
 
-tasks{
+tasks {
     test {
         systemProperty("project.version", project.version)
         dependsOn(publishToMavenLocal)
-    }  
+    }
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    from(sourceSets.main.get().allSource)
+    archiveClassifier.set("sources")
 }
 
 publishing {
     repositories {
         maven {
-            url = uri("http://oss.jfrog.org/oss-release-local")
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Drill4j/${project.name}")
             credentials {
-                username =
-                        if (project.hasProperty("bintrayUser"))
-                            project.property("bintrayUser").toString()
-                        else System.getenv("BINTRAY_USER")
-                password =
-                        if (project.hasProperty("bintrayApiKey"))
-                            project.property("bintrayApiKey").toString()
-                        else System.getenv("BINTRAY_API_KEY")
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GH_USERNAME")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GH_API_KEY")
             }
+        }
+    }
+    publications {
+        create<MavenPublication>("gpr") {
+            from(components["kotlin"])
+            artifact(sourcesJar.get())
         }
     }
 }
