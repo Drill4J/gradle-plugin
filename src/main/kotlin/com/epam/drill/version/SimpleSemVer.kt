@@ -24,7 +24,7 @@ data class SimpleSemVer(
     }
 }
 
-private val semVerRegex = Regex("(\\d+)\\.(\\d+)\\.(\\d+)(-[^\\s]+|)")
+private val semVerRegex = Regex("v?(\\d+)\\.(\\d+)\\.(\\d+)(-[^\\s]+|)")
 
 internal fun String.toSemVer(): SimpleSemVer? = semVerRegex.matchEntire(this)?.run {
     val (_, major, minor, patch, suffix) = groupValues
