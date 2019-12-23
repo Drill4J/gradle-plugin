@@ -1,10 +1,9 @@
-package com.epam.drill
+package com.epam.drill.version
 
 import groovy.json.JsonOutput
 import org.eclipse.jgit.api.Git
 import java.io.File
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 
 class BuildScriptBuilder {

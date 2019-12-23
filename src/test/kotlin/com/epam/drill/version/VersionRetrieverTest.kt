@@ -1,6 +1,5 @@
-package com.epam.drill
+package com.epam.drill.version
 
-import com.epam.drill.version.*
 import org.eclipse.jgit.api.*
 import org.gradle.testkit.runner.*
 import org.junit.rules.*
