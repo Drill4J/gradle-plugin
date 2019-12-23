@@ -1,4 +1,4 @@
-name: Check agent
+name: Check plugin
 on:
   pull_request:
     branches:

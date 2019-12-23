@@ -19,8 +19,11 @@ dependencies {
     testImplementation(gradleTestKit())
 }
 
-tasks.test {
-    dependsOn("publishToMavenLocal")
+tasks{
+    test {
+        systemProperty("project.version", project.version)
+        dependsOn(publishToMavenLocal)
+    }  
 }
 
 publishing {

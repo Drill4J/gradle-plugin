@@ -20,7 +20,11 @@ data class SimpleSemVer(
     }
 
     override fun toString(): String {
-        return listOf("$major.$minor.$patch", suffix).joinToString("-")
+        val optSuffix = when(suffix) {
+            "" -> ""
+            else -> "-$suffix"
+        }
+        return "$major.$minor.$patch$optSuffix"
     }
 }
 
