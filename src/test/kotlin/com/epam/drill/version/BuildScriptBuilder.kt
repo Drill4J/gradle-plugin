@@ -1,52 +1,45 @@
 package com.epam.drill.version
 
-import groovy.json.JsonOutput
-import org.eclipse.jgit.api.Git
-import java.io.File
+import groovy.json.*
+import org.eclipse.jgit.api.*
+import java.io.*
 import java.util.*
-import kotlin.collections.ArrayList
 
-class BuildScriptBuilder {
-    var kotlinVersion = "1.0.6"
+class BuildScriptBuilder(val pluginVersion: String) {
 
-    val scriptClassPath = ArrayList<Any>()
-    val compileDependencies = ArrayList<String>()
+    val scriptClassPath = mutableListOf<Any>()
+    val compileDependencies = mutableListOf<String>()
 
-    val applyPlugins = ArrayList<String>()
+    val applyPlugins = mutableListOf<String>()
 
     fun applyDrillVersioningPlugin() {
         applyPlugins += "com.epam.drill.version.plugin"
     }
 
-    fun build(body: Builder.() -> Unit = {}): String {
-        val builder = Builder()
+    fun build(body: Builder.() -> Unit = {}): String = Builder().apply {
+        
+        
 
-        builder.apply {
-            block("buildscript") {
-                line("ext.kotlin_version = ${JsonOutput.toJson(kotlinVersion)}")
-
-                repositories()
-                scriptClassPath.add("com.epam.drill:drill-gradle-plugin:0.4.0")
-                block("dependencies") {
-                    dependencies("classpath", scriptClassPath)
-                }
-            }
-
-            for (plugin in applyPlugins) {
-                line("apply plugin: ${JsonOutput.toJson(plugin)}")
-            }
-
+        block("buildscript") {
             repositories()
-
+            scriptClassPath.add("com.epam.drill:drill-gradle-plugin:$pluginVersion")
             block("dependencies") {
-                dependencies("compile", compileDependencies)
+                dependencies("classpath", scriptClassPath)
             }
-
-            body()
         }
 
-        return builder.build()
-    }
+        for (plugin in applyPlugins) {
+            line("apply plugin: ${JsonOutput.toJson(plugin)}")
+        }
+
+        repositories()
+
+        block("dependencies") {
+            dependencies("implementation", compileDependencies)
+        }
+
+        body()
+    }.build()
 
     private fun Builder.dependencies(type: String, list: List<Any>) {
         for (dep in list) {
@@ -66,9 +59,9 @@ class BuildScriptBuilder {
 
     private fun Builder.repositories() {
         block("repositories") {
+            line("mavenLocal()")
             line("jcenter()")
             line("mavenCentral()")
-            line("mavenLocal()")
         }
     }
 

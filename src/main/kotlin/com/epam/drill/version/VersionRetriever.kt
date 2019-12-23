@@ -17,12 +17,11 @@ class VersionRetriever : Plugin<Project> {
             if (logger.isDebugEnabled) {
                 tags.forEach(logger::debug)
             }
-            val lastVersion = tags
-                .lastVersion()
+            val lastVersion = tags.lastVersion()
 
             logger.info("Last version from tags $lastVersion")
             target.version = lastVersion ?: SimpleSemVer(0, 1, 0)
-            logger.info("Project version ${target.version}")
+            logger.info("Project version '${target.version}'")
         } catch (ex: Exception) {
             target.version = "0.1.0"
             logger.error(

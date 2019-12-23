@@ -9,12 +9,14 @@ import kotlin.test.*
 
 
 class VersionRetrieverTest {
-    private val builder = BuildScriptBuilder()
+    private val projectVersion = System.getProperty("project.version")
+
+    private val builder = BuildScriptBuilder(projectVersion)
     private val firstTag = SimpleSemVer(0, 0, 1)
     private lateinit var buildGradleFile: File
     private lateinit var srcDir: File
     private lateinit var git: Git
-
+    
     @get:org.junit.Rule
     val testName = TestName()
 
@@ -28,7 +30,6 @@ class VersionRetrieverTest {
             }
             println("Copied project to ${dst.absolutePath}")
         }
-
     }
 
     @get:org.junit.Rule
