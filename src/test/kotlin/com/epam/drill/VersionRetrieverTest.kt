@@ -1,32 +1,25 @@
 package com.epam.drill
 
-import com.epam.drill.version.SemVer
-import com.epam.drill.version.tag
-import org.eclipse.jgit.api.Git
-import org.gradle.testkit.runner.GradleRunner
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import org.junit.rules.TestName
-import org.junit.rules.TestWatcher
-import org.junit.runner.Description
-import java.io.File
-import java.util.*
-import kotlin.test.assertTrue
+import com.epam.drill.version.*
+import org.eclipse.jgit.api.*
+import org.gradle.testkit.runner.*
+import org.junit.rules.*
+import org.junit.runner.*
+import java.io.*
+import kotlin.test.*
 
 
 class VersionRetrieverTest {
     private val builder = BuildScriptBuilder()
-    private val firstTag = SemVer(0, 0, 1)
+    private val firstTag = SimpleSemVer(0, 0, 1)
     private lateinit var buildGradleFile: File
     private lateinit var srcDir: File
     private lateinit var git: Git
 
-    @get:Rule
+    @get:org.junit.Rule
     val testName = TestName()
 
-    @get:Rule
+    @get:org.junit.Rule
     val failedRule = object : TestWatcher() {
         override fun failed(e: Throwable?, description: Description?) {
             val dst = File("build/tests/${testName.methodName.replace("[", "-").replace("]", "")}").apply { mkdirs() }
@@ -39,10 +32,10 @@ class VersionRetrieverTest {
 
     }
 
-    @get:Rule
+    @get:org.junit.Rule
     val projectDir = TemporaryFolder()
 
-    @Before
+    @BeforeTest
     fun setUp() {
         projectDir.delete()
         projectDir.create()
@@ -57,10 +50,12 @@ class VersionRetrieverTest {
         val text = builder.build()
 
         val versionPrinter = "println(\"version: '\${project.version}'\")"
-        buildGradleFile.writeText("""
+        buildGradleFile.writeText(
+            """
             $text 
             $versionPrinter
-            """)
+            """
+        )
         git = Git.init().setGitDir(projectDir.root.resolve(".git")).call()
         git.add().addFilepattern(".").call()
         git.commit().setMessage("first commit").call()
@@ -81,31 +76,28 @@ class VersionRetrieverTest {
         git.randomCommit()
         git.tag("0.1.11")
         val output = GradleRunner.create()
-                .withProjectDir(projectDir.root)
-                .withArguments("build")
-                .withGradleVersion("5.6.2")
-                .withPluginClasspath()
-                .withDebug(true)
-                .build().output
+            .withProjectDir(projectDir.root)
+            .withArguments("build")
+            .withGradleVersion("5.6.2")
+            .withPluginClasspath()
+            .withDebug(true)
+            .build().output
         println(output)
         assertTrue(output.contains("version: '0.1.11'"))
     }
 
     @Test
     fun `max version equals of last tag`() {
-        val tagVersionRegex = Regex("(\\d+)\\.(\\d+)\\.(\\d+)")
-        val listOf = mutableListOf(
-                "0.0.1",
-                "0.2.1",
-                "0.2.100",
-                "0.2.10",
-                "0.2.2"
+        val listOf = listOf(
+            "0.0.1",
+            "0.2.1",
+            "0.2.100",
+            "0.2.10",
+            "0.2.2",
+            "0.3.0-123",
+            "0.3.0-124"
         )
-        val map = listOf.map {
-            val (_, major, minor, patch) = tagVersionRegex.matchEntire(it)!!.groupValues
-            SemVer(major.toInt(), minor.toInt(), patch.toInt())
-        }
-        Collections.sort(map)
-        print(map)
+        val lastVersion = listOf.lastVersion()
+        assertEquals("0.3.0-124", lastVersion.toString())
     }
 }

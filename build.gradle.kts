@@ -14,6 +14,7 @@ dependencies {
     implementation(kotlin("gradle-plugin"))
     implementation("org.eclipse.jgit:org.eclipse.jgit:5.5.0.201909110433-r")
 
+    testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))
     testImplementation(gradleTestKit())
 }
@@ -38,10 +39,4 @@ publishing {
             }
         }
     }
-
-//    publications {
-//        create<MavenPublication>("coverageZip") {
-//            artifact(tasks["distZip"])
-//        }
-//    }
 }
