@@ -1,4 +1,4 @@
-name: Build & publish drill artifacts
+name: Build & publish artifacts
 on:
   push:
     tags:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_and_publish:
-    name: Publish to Maven repo and Docker registry
+    name: Check and publish to Maven repo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
