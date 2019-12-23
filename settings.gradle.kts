@@ -1,1 +1,8 @@
-rootProject.name = "drill-gradle-plugin"
+rootProject.name = "gradle-plugin"
+
+buildCache {
+    local {
+        directory = rootDir.resolve("build-cache")
+        removeUnusedEntriesAfterDays = 60
+    }
+}

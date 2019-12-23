@@ -22,7 +22,7 @@ class BuildScriptBuilder(val pluginVersion: String) {
 
         block("buildscript") {
             repositories()
-            scriptClassPath.add("com.epam.drill:drill-gradle-plugin:$pluginVersion")
+            scriptClassPath.add("com.epam.drill:gradle-plugin:$pluginVersion")
             block("dependencies") {
                 dependencies("classpath", scriptClassPath)
             }
