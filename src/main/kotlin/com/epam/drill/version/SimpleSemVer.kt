@@ -15,18 +15,23 @@ data class SimpleSemVer(
         else -> suffix.compareTo(other.suffix)
     }.sign
 
-    fun toTag(): String {
-        return "$major.$minor.$patch"
-    }
+    fun incMinor() = copy(minor = minor + 1)
+
+    fun next() = copy(
+        minor = if (suffix.isEmpty()) minor + 1 else minor,
+        //TODO regex replace
+        suffix = "${suffix.toIntOrNull()?.inc() ?: 0}"
+    )
 
     override fun toString(): String {
-        val optSuffix = when(suffix) {
+        val optSuffix = when (suffix) {
             "" -> ""
             else -> "-$suffix"
         }
         return "$major.$minor.$patch$optSuffix"
     }
 }
+
 
 private val semVerRegex = Regex("v?(\\d+)\\.(\\d+)\\.(\\d+)(-[^\\s]+|)")
 

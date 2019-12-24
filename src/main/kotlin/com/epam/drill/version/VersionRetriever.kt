@@ -2,47 +2,51 @@ package com.epam.drill.version
 
 import org.eclipse.jgit.api.*
 import org.eclipse.jgit.internal.storage.file.*
+import org.eclipse.jgit.lib.*
 import org.gradle.api.*
-import java.io.*
-import java.util.concurrent.*
+import org.gradle.kotlin.dsl.*
+
+private val defaultVersion = SimpleSemVer(0, 1, 0, "0")
 
 class VersionRetriever : Plugin<Project> {
 
     override fun apply(target: Project): Unit = target.run {
-        val git = Git.wrap(FileRepository(target.rootProject.rootDir.resolve(".git")))
-        try {
-            val tags = git.tagList().call()
-                .map { it.name.substringAfter("refs/tags/", "") }
-                .filter(String::isNotBlank)
-            if (logger.isDebugEnabled) {
-                tags.forEach(logger::debug)
-            }
-            val lastVersion = tags.lastVersion()
-
-            logger.info("Last version from tags $lastVersion")
-            target.version = lastVersion ?: SimpleSemVer(0, 1, 0)
-            logger.info("Project version '${target.version}'")
+        val gitRepo = FileRepository(target.rootProject.rootDir.resolve(".git"))
+        val git = Git.wrap(gitRepo)
+        val version = try {
+            val head = git.repository.resolve(Constants.HEAD)
+            val commitName = head?.name
+            git.describe().setTags(true).call()?.tagToSemVer(commitName) ?: defaultVersion
         } catch (ex: Exception) {
-            target.version = "0.1.0"
-            logger.error(
-                "Something went wrong. $ex \n" +
-                    "Version will be changed to ${target.version}"
-            )
+            logger.error("Git 'describe' failed, defaulting to v$defaultVersion")
+            defaultVersion
+        }
+        target.version = version
+
+        target.tasks {
+            register("printVersion") {
+                doLast { println(version) }
+            }
+
+            register("printReleaseVersion") {
+                doLast { println(version.copy(suffix = "")) }
+            }
         }
     }
 }
 
-fun List<String>.lastVersion(): SimpleSemVer? = mapNotNull(String::toSemVer).max()
-
-fun Git.tag(name: String) {
-    "git tag $name".runCommand(this.repository.directory.parentFile)
-}
-
-fun String.runCommand(workingDir: File) {
-    ProcessBuilder(*split(" ").toTypedArray())
-        .directory(workingDir)
-        .redirectOutput(ProcessBuilder.Redirect.INHERIT)
-        .redirectError(ProcessBuilder.Redirect.INHERIT)
-        .start()
-        .waitFor(60, TimeUnit.MINUTES)
+internal fun String.tagToSemVer(commitName: String?): SimpleSemVer? {
+    val shortCommitName = commitName?.substring(0, 7)
+    val isNew = shortCommitName != null && endsWith(shortCommitName)
+    val rawVersion = when {
+        //example: 0.1.0-1-gb35375e -> 0.1.0 
+        isNew -> substringBeforeLast("-").substringBeforeLast("-")
+        else -> this
+    }
+    return rawVersion.toSemVer()?.run {
+        when {
+            isNew -> next()
+            else -> this
+        }
+    }
 }
