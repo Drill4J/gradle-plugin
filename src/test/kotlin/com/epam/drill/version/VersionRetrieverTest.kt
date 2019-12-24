@@ -5,6 +5,7 @@ import org.gradle.testkit.runner.*
 import org.junit.rules.*
 import org.junit.runner.*
 import java.io.*
+import java.util.concurrent.*
 import kotlin.test.*
 
 
@@ -12,11 +13,11 @@ class VersionRetrieverTest {
     private val projectVersion = System.getProperty("project.version")
 
     private val builder = BuildScriptBuilder(projectVersion)
-    private val firstTag = SimpleSemVer(0, 0, 1)
+    private val firstTag = SimpleSemVer(0, 1, 0)
     private lateinit var buildGradleFile: File
     private lateinit var srcDir: File
     private lateinit var git: Git
-    
+
     @get:org.junit.Rule
     val testName = TestName()
 
@@ -57,47 +58,81 @@ class VersionRetrieverTest {
             """
         )
         git = Git.init().setGitDir(projectDir.root.resolve(".git")).call()
-        git.add().addFilepattern(".").call()
-        git.commit().setMessage("first commit").call()
-
-        git.tag(firstTag.toTag())
     }
 
     @Test
-    fun `release version equals of last tag with zero distance`() {
-        git.randomCommit()
-        git.tag("v0.1.0")
-        Thread.sleep(1500)
-        git.randomCommit()
-        git.tag("0.1.3")
-        Thread.sleep(1500)
-        git.randomCommit()
-        git.tag("0.1.2")
-        git.randomCommit()
-        git.tag("0.1.11")
+    fun `empty repo - default version`() {
         val output = GradleRunner.create()
             .withProjectDir(projectDir.root)
             .withArguments("build")
-            .withGradleVersion("5.6.2")
+            .withGradleVersion("6.0.1")
             .withPluginClasspath()
             .withDebug(true)
             .build().output
         println(output)
-        assertTrue(output.contains("version: '0.1.11'"))
+        assertTrue(output.contains("version: '0.1.0-0'"))
     }
 
     @Test
-    fun `max version equals of last tag`() {
-        val listOf = listOf(
-            "0.0.1",
-            "0.2.1",
-            "0.2.100",
-            "0.2.10",
-            "0.2.2",
-            "0.3.0-123",
-            "0.3.0-124"
-        )
-        val lastVersion = listOf.lastVersion()
-        assertEquals("0.3.0-124", lastVersion.toString())
+    fun `print current version for new commit`() {
+        firstCommit()
+        git.randomCommit()
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withPluginClasspath()
+            .withArguments("-q", "printVersion")
+            .build().output
+        println(output)
+        val taskOutput = output.lines().last(String::isNotBlank)
+        assertEquals("0.2.0-0", taskOutput)
     }
+
+    @Test
+    fun `print release version for new commit`() {
+        firstCommit()
+        git.randomCommit()
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withPluginClasspath()
+            .withArguments("-q", "printReleaseVersion")
+            .build().output
+        println(output)
+        val taskOutput = output.lines().last(String::isNotBlank)
+        assertEquals("0.2.0", taskOutput)
+    }
+
+    @Test
+    fun `print release version for tagged commit`() {
+        firstCommit()
+        git.randomCommit()
+        git.tag("0.2.0-0")
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withPluginClasspath()
+            .withArguments("-q", "printReleaseVersion")
+            .build().output
+        println(output)
+        val taskOutput = output.lines().last(String::isNotBlank)
+        assertEquals("0.2.0", taskOutput)
+    }
+
+    private fun firstCommit() {
+        git.add().addFilepattern(".").call()
+        git.commit().setMessage("first commit").call()
+
+        git.tag(firstTag.toString())
+    }
+}
+
+fun Git.tag(name: String) {
+    "git tag $name".runCommand(this.repository.directory.parentFile)
+}
+
+fun String.runCommand(workingDir: File) {
+    ProcessBuilder(*split(" ").toTypedArray())
+        .directory(workingDir)
+        .redirectOutput(ProcessBuilder.Redirect.INHERIT)
+        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .start()
+        .waitFor(60, TimeUnit.MINUTES)
 }
