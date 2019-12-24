@@ -32,5 +32,5 @@ jobs:
         run: |
           gradle publish
         env:
-          GH_USERNAME: ${{ secrets.GH_USERNAME }}
-          GH_API_KEY: ${{ secrets.GH_API_KEY }}
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
