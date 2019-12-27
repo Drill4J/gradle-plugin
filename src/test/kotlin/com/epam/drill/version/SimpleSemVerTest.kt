@@ -23,13 +23,19 @@ class SimpleSemVerTest {
 
     @Test
     fun `next version with suffix`() {
-        val next = "0.1.0-123".toSemVer()?.next()
+        val next = "0.1.0-123".toSemVer()?.bump()
         assertEquals(SimpleSemVer(0, 1, 0, "124"), next)
     }
 
     @Test
     fun `next version without suffix`() {
-        val next = "0.1.0".toSemVer()?.next()
+        val next = "0.1.0".toSemVer()?.bump()
+        assertEquals(SimpleSemVer(0, 2, 0, "0"), next)
+    }
+
+    @Test
+    fun `next version without suffix non-zero path part`() {
+        val next = "0.1.1".toSemVer()?.bump()
         assertEquals(SimpleSemVer(0, 2, 0, "0"), next)
     }
 }

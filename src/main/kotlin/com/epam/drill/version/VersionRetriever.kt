@@ -45,7 +45,7 @@ internal fun String.tagToSemVer(commitName: String?): SimpleSemVer? {
     }
     return rawVersion.toSemVer()?.run {
         when {
-            isNew -> next()
+            isNew -> bump()
             else -> this
         }
     }

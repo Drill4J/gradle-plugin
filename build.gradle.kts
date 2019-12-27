@@ -1,5 +1,3 @@
-@file:Suppress("UnstableApiUsage")
-
 plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
@@ -10,10 +8,11 @@ repositories {
     mavenCentral()
 }
 
+val kotlinVersion = "1.3.60"
 dependencies {
     implementation(gradleApi())
-    implementation(kotlin("stdlib-jdk8"))
-    implementation(kotlin("gradle-plugin"))
+    implementation(kotlin("stdlib-jdk8", kotlinVersion))
+    implementation(kotlin("gradle-plugin", kotlinVersion))
     implementation("org.eclipse.jgit:org.eclipse.jgit:5.5.0.201909110433-r")
 
     testImplementation(kotlin("test"))

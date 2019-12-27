@@ -15,13 +15,14 @@ data class SimpleSemVer(
         else -> suffix.compareTo(other.suffix)
     }.sign
 
-    fun incMinor() = copy(minor = minor + 1)
+    fun bumpMinor() = copy(minor = minor + 1, patch = 0, suffix = nextSuffix())
 
-    fun next() = copy(
-        minor = if (suffix.isEmpty()) minor + 1 else minor,
-        //TODO regex replace
-        suffix = "${suffix.toIntOrNull()?.inc() ?: 0}"
-    )
+    fun bump() = when(suffix) {
+        "" -> bumpMinor()
+        else -> copy(suffix = nextSuffix())
+    }
+
+    private fun nextSuffix() = "${suffix.toIntOrNull()?.inc() ?: 0}"
 
     override fun toString(): String {
         val optSuffix = when (suffix) {
