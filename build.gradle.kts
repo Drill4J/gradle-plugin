@@ -21,6 +21,11 @@ dependencies {
 }
 
 tasks {
+
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions.jvmTarget = "1.8"
+    }
+
     test {
         systemProperty("project.version", project.version)
         dependsOn(publishToMavenLocal)
