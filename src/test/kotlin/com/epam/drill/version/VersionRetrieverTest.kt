@@ -116,6 +116,23 @@ class VersionRetrieverTest {
         assertEquals("0.2.0", taskOutput)
     }
 
+    @Test
+    fun `print print version after release`() {
+        firstCommit()
+        git.randomCommit()
+        git.tag("0.2.0-0")
+        git.tag("0.2.0")
+        git.randomCommit()
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withPluginClasspath()
+            .withArguments("-q", "printVersion")
+            .build().output
+        println(output)
+        val taskOutput = output.lines().last(String::isNotBlank)
+        assertEquals("0.3.0-0", taskOutput)
+    }
+
     private fun firstCommit() {
         git.add().addFilepattern(".").call()
         git.commit().setMessage("first commit").call()
