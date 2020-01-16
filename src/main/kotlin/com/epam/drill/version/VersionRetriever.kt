@@ -1,22 +1,23 @@
 package com.epam.drill.version
 
-import org.eclipse.jgit.api.*
-import org.eclipse.jgit.internal.storage.file.*
-import org.eclipse.jgit.lib.*
 import org.gradle.api.*
 import org.gradle.kotlin.dsl.*
+import java.io.*
 
 private val defaultVersion = SimpleSemVer(0, 1, 0, "0")
 
 class VersionRetriever : Plugin<Project> {
 
     override fun apply(target: Project): Unit = target.run {
-        val gitRepo = FileRepository(target.rootProject.rootDir.resolve(".git"))
-        val git = Git.wrap(gitRepo)
         val version = try {
-            val head = git.repository.resolve(Constants.HEAD)
-            val commitName = head?.name
-            git.describe().setTags(true).call()?.tagToSemVer(commitName) ?: defaultVersion
+            val commitName = target.git("rev-parse", "HEAD")
+            commitName?.let {
+                val rawTag = target.git(
+                    "describe", "--tags",
+                    "--match", "[0-9]*", "--match", "v[0-9]*"
+                )
+                rawTag?.tagToSemVer(it)
+            } ?: defaultVersion
         } catch (ex: Exception) {
             logger.error("Git 'describe' failed, defaulting to v$defaultVersion")
             defaultVersion
@@ -25,14 +26,29 @@ class VersionRetriever : Plugin<Project> {
 
         target.tasks {
             register("printVersion") {
+                group = "version"
                 doLast { println(version) }
             }
 
             register("printReleaseVersion") {
+                group = "version"
                 doLast { println(version.copy(suffix = "")) }
             }
         }
     }
+}
+
+internal fun Project.git(vararg args: String): String? {
+    val output = ByteArrayOutputStream()
+    val execResult = exec {
+        workingDir = rootProject.rootDir
+        executable = "git"
+        args(*args)
+        standardOutput = output
+    }
+    return output.takeIf { execResult.exitValue == 0 }?.run {
+        toString(Charsets.UTF_8.name()).trim()
+    }?.takeIf(String::isNotEmpty)
 }
 
 internal fun String.tagToSemVer(commitName: String?): SimpleSemVer? {

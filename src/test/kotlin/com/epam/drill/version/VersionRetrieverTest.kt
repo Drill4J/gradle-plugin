@@ -77,13 +77,9 @@ class VersionRetrieverTest {
     fun `print current version for new commit`() {
         firstCommit()
         git.randomCommit()
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
-            .withPluginClasspath()
-            .withArguments("-q", "printVersion")
-            .build().output
+        val output = runTaskQuietly("printVersion")
         println(output)
-        val taskOutput = output.lines().last(String::isNotBlank)
+        val taskOutput = output.outputLine()
         assertEquals("0.2.0-0", taskOutput)
     }
 
@@ -91,13 +87,9 @@ class VersionRetrieverTest {
     fun `print release version for new commit`() {
         firstCommit()
         git.randomCommit()
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
-            .withPluginClasspath()
-            .withArguments("-q", "printReleaseVersion")
-            .build().output
+        val output = runTaskQuietly("printReleaseVersion")
         println(output)
-        val taskOutput = output.lines().last(String::isNotBlank)
+        val taskOutput = output.outputLine()
         assertEquals("0.2.0", taskOutput)
     }
 
@@ -106,31 +98,65 @@ class VersionRetrieverTest {
         firstCommit()
         git.randomCommit()
         git.tag("0.2.0-0")
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
-            .withPluginClasspath()
-            .withArguments("-q", "printReleaseVersion")
-            .build().output
+        val output = runTaskQuietly("printReleaseVersion")
         println(output)
-        val taskOutput = output.lines().last(String::isNotBlank)
+        val taskOutput = output.outputLine()
         assertEquals("0.2.0", taskOutput)
     }
 
     @Test
-    fun `print print version after release`() {
+    fun `ignore non-version tags - current version`() {
         firstCommit()
         git.randomCommit()
-        git.tag("0.2.0-0")
-        git.tag("0.2.0")
+        git.tag("something0.3.0")
+        git.tag("sometag")
+        val version = runTaskQuietly("printVersion").outputLine()
+        assertEquals("0.2.0-0", version)
+    }
+
+
+    @Test
+    fun `ignore non-version tags - release version`() {
+        firstCommit()
         git.randomCommit()
-        val output = GradleRunner.create()
+        git.tag("v0.2.0-0")
+        git.tag("something0.3.0")
+        git.tag("sometag")
+        val version = runTaskQuietly("printReleaseVersion").outputLine()
+        assertEquals("0.2.0", version)
+    }
+
+    @Test
+    fun `print release version for tagged commit - v prefix`() {
+        firstCommit()
+        git.randomCommit()
+        git.tag("v0.2.0-0")
+        val output = runTaskQuietly("printReleaseVersion")
+        println(output)
+        val taskOutput = output.outputLine()
+        assertEquals("0.2.0", taskOutput)
+    }
+
+    @Test
+    fun `print version after release`() {
+        firstCommit()
+        git.randomCommit()
+        git.tag("v0.2.0-0")
+        git.tag("v0.2.0-1")
+        git.tag("v0.2.0")
+        git.randomCommit()
+        val output = runTaskQuietly("printVersion")
+        println(output)
+        val taskOutput = output.outputLine()
+        assertEquals("0.3.0-0", taskOutput)
+    }
+
+    private fun runTaskQuietly(task: String): String {
+        return GradleRunner.create()
             .withProjectDir(projectDir.root)
             .withPluginClasspath()
-            .withArguments("-q", "printVersion")
+            .withArguments("-q", task)
             .build().output
-        println(output)
-        val taskOutput = output.lines().last(String::isNotBlank)
-        assertEquals("0.3.0-0", taskOutput)
     }
 
     private fun firstCommit() {
@@ -153,3 +179,5 @@ fun String.runCommand(workingDir: File) {
         .start()
         .waitFor(60, TimeUnit.MINUTES)
 }
+
+private fun String.outputLine() = lines().last(String::isNotBlank)

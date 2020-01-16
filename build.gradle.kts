@@ -13,10 +13,10 @@ dependencies {
     implementation(gradleApi())
     implementation(kotlin("stdlib-jdk8", kotlinVersion))
     implementation(kotlin("gradle-plugin", kotlinVersion))
-    implementation("org.eclipse.jgit:org.eclipse.jgit:5.5.0.201909110433-r")
 
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))
+    testImplementation("org.eclipse.jgit:org.eclipse.jgit:5.5.0.201909110433-r")
     testImplementation(gradleTestKit())
 }
 
