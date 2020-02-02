@@ -8,33 +8,52 @@ private val defaultVersion = SimpleSemVer(0, 1, 0, "0")
 
 class VersionRetriever : Plugin<Project> {
 
-    override fun apply(target: Project): Unit = target.run {
-        val version = try {
-            val commitName = target.git("rev-parse", "HEAD")
-            commitName?.let {
-                val rawTag = target.git(
-                    "describe", "--tags",
-                    "--match", "[0-9]*", "--match", "v[0-9]*"
-                )
-                rawTag?.tagToSemVer(it)
-            } ?: defaultVersion
-        } catch (ex: Exception) {
-            logger.error("Git 'describe' failed, defaulting to v$defaultVersion")
-            defaultVersion
-        }
-        target.version = version
+    override fun apply(target: Project): Unit = with(target) {
+        val gitVersion: SimpleSemVer by GitVersionDelegateProvider(rootProject)
+        version = gitVersion
 
         target.tasks {
             register("printVersion") {
                 group = "version"
-                doLast { println(version) }
+                doLast { println(gitVersion) }
             }
 
             register("printReleaseVersion") {
                 group = "version"
-                doLast { println(version.copy(suffix = "")) }
+                doLast { println(gitVersion.copy(suffix = "")) }
             }
         }
+    }
+}
+
+internal class GitVersionDelegateProvider(
+    private val project: Project
+) {
+    operator fun provideDelegate(
+        thisRef: Any?,
+        property: kotlin.reflect.KProperty<*>
+    ): InitialValueExtraPropertyDelegate<SimpleSemVer> {
+        val extra = project.extra
+        if (!extra.has(property.name)) {
+            extra.set(property.name, project.resolveGitVersion())
+        }
+        return InitialValueExtraPropertyDelegate.of(extra)
+    }
+}
+
+internal fun Project.resolveGitVersion(): SimpleSemVer {
+    return try {
+        val commitName = git("rev-parse", "HEAD")
+        commitName?.let {
+            val rawTag = git(
+                "describe", "--tags",
+                "--match", "[0-9]*", "--match", "v[0-9]*"
+            )
+            rawTag?.tagToSemVer(it)
+        } ?: defaultVersion
+    } catch (ex: Exception) {
+        logger.error("Git 'describe' failed, defaulting to v$defaultVersion")
+        defaultVersion
     }
 }
 
