@@ -32,6 +32,15 @@ tasks {
     }
 }
 
+gradlePlugin {
+    plugins {
+        create("version") {
+            id = "$group.version"
+            implementationClass = "com.epam.drill.gradle.VersionRetriever"
+        }
+    }
+}
+
 publishing {
     repositories {
         maven {
