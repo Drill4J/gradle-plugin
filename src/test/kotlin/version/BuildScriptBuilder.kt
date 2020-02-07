@@ -1,4 +1,4 @@
-package com.epam.drill.version
+package com.epam.drill.gradle.version
 
 import groovy.json.*
 import org.eclipse.jgit.api.*

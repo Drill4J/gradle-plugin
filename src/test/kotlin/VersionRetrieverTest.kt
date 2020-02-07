@@ -1,5 +1,6 @@
-package com.epam.drill.version
+package com.epam.drill.gradle
 
+import com.epam.drill.gradle.version.*
 import org.eclipse.jgit.api.*
 import org.gradle.testkit.runner.*
 import org.junit.rules.*
@@ -58,6 +59,21 @@ class VersionRetrieverTest {
             """
         )
         git = Git.init().setGitDir(projectDir.root.resolve(".git")).call()
+    }
+
+    @Test
+    fun `no repo - default version`() {
+        val deleted = projectDir.root.resolve(".git").deleteRecursively()
+        assertTrue(actual = deleted, message = "Error deleting .git dir")
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withArguments("build")
+            .withGradleVersion("6.0.1")
+            .withPluginClasspath()
+            .withDebug(true)
+            .build().output
+        println(output)
+        assertTrue(output.contains("version: '0.1.0-0'"))
     }
 
     @Test
