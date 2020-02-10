@@ -37,6 +37,16 @@ gradlePlugin {
         create("version") {
             id = "$group.version"
             implementationClass = "com.epam.drill.gradle.VersionRetriever"
+
+        }
+        create("version.plugin") {
+            id = "$group.version.plugin"
+            implementationClass = "com.epam.drill.gradle.VersionRetriever"
+
+        }
+        create("cross-compilation") {
+            id = "$group.cross-compilation"
+            implementationClass = "com.epam.drill.gradle.CrossCompilation"
         }
     }
 }
