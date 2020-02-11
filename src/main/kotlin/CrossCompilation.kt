@@ -23,15 +23,16 @@ class CrossCompilation : Plugin<Project> {
             val kotlinExtDsl = DslObject(kotlinExt)
             @Suppress("UNCHECKED_CAST") val targets =
                 kotlinExtDsl.extensions.getByName("targets") as NamedDomainObjectCollection<KotlinTarget>
-            targets.linuxX64Targets.firstOnly {
+            val linuxX64Targets = targets.nativeTargets { konanTarget == KonanTarget.LINUX_X64 }
+            linuxX64Targets.firstOnly {
                 val common = compilations.create(COMMON)
                 val posix = compilations.create(POSIX)
-                posix.defaultSourceSet.dependsOn(common.defaultSourceSet)
                 common.setCommonSources()
                 posix.setCommonSources()
-                targets.withType(KotlinNativeTarget::class) {
-                    val main by compilations
-                    main.defaultSourceSet {
+                posix.associateWith(common)
+                mainCompilation.associateWith(posix)
+                targets.nativeTargets { konanTarget != KonanTarget.LINUX_X64 }.all {
+                    mainCompilation.defaultSourceSet {
                         if (konanTarget.family != Family.MINGW) {
                             dependsOn(common.defaultSourceSet)
                             dependsOn(posix.defaultSourceSet)
@@ -43,7 +44,7 @@ class CrossCompilation : Plugin<Project> {
             }
             kotlinExtDsl.extensions.create("crossCompilation", CrossCompilationExtension::class.java, targets)
             project.afterEvaluate {
-                if (targets.linuxX64Targets.isEmpty())
+                if (linuxX64Targets.isEmpty())
                     throw GradleException(
                         "You must specify a ${KonanTarget.LINUX_X64} target to configure cross compilation."
                     )
@@ -51,7 +52,6 @@ class CrossCompilation : Plugin<Project> {
         }
     }
 }
-
 
 open class CrossCompilationExtension(
     private val targets: NamedDomainObjectCollection<KotlinTarget>
@@ -65,8 +65,15 @@ open class CrossCompilationExtension(
     }
 }
 
+fun NamedDomainObjectCollection<KotlinTarget>.nativeTargets(
+    matcher: KotlinNativeTarget.() -> Boolean = { true }
+) = withType(KotlinNativeTarget::class).matching(matcher)
+
 val NamedDomainObjectCollection<KotlinTarget>.linuxX64Targets
     get() = withType(KotlinNativeTarget::class).matching { it.konanTarget == KonanTarget.LINUX_X64 }
+
+val KotlinNativeTarget.mainCompilation: KotlinNativeCompilation
+    get() = compilations[KotlinCompilation.MAIN_COMPILATION_NAME]
 
 
 fun <T> NamedDomainObjectCollection<T>.firstOnly(block: T.() -> Unit) {
