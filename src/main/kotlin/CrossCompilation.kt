@@ -29,7 +29,16 @@ class CrossCompilation : Plugin<Project> {
                 val posix = compilations.create(POSIX)
                 common.setCommonSources()
                 posix.setCommonSources()
-                posix.defaultSourceSet.dependsOn(common.defaultSourceSet)
+                posix.associateWith(common)
+                val mainCompilationTask = tasks.named(mainCompilation.compileKotlinTaskName)
+
+                listOf(posix.cinterops, common.cinterops).forEach { cinterops ->
+                    cinterops.all {
+                        mainCompilationTask {
+                            dependsOn(interopProcessingTaskName)
+                        }
+                    }
+                }
                 targets.nativeTargets().all {
                     mainCompilation.defaultSourceSet {
                         if (konanTarget.family != Family.MINGW) {
