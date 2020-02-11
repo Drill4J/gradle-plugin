@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
 import org.jetbrains.kotlin.konan.target.*
+import java.util.concurrent.atomic.*
 
 
 private const val COMMON = "common"
@@ -22,28 +23,31 @@ class CrossCompilation : Plugin<Project> {
             val kotlinExtDsl = DslObject(kotlinExt)
             @Suppress("UNCHECKED_CAST") val targets =
                 kotlinExtDsl.extensions.getByName("targets") as NamedDomainObjectCollection<KotlinTarget>
-            targets.whenObjectAdded {
-                if (this is KotlinNativeTarget && konanTarget.family == Family.LINUX
-                ) {
-                    val common = compilations.create(COMMON)
-                    val posix = compilations.create(POSIX) {
-                        defaultSourceSet.dependsOn(common.defaultSourceSet)
-                    }
-                    posix.defaultSourceSet.dependsOn(common.defaultSourceSet)
-                    targets.withType(KotlinNativeTarget::class) {
-                        val main by compilations
-                        main.defaultSourceSet {
-                            if (konanTarget.family != Family.MINGW) {
-                                dependsOn(common.defaultSourceSet)
-                                dependsOn(posix.defaultSourceSet)
-                            } else {
-                                dependsOn(common.defaultSourceSet)
-                            }
+            targets.linuxX64Targets.firstOnly {
+                val common = compilations.create(COMMON)
+                val posix = compilations.create(POSIX)
+                posix.defaultSourceSet.dependsOn(common.defaultSourceSet)
+                common.setCommonSources()
+                posix.setCommonSources()
+                targets.withType(KotlinNativeTarget::class) {
+                    val main by compilations
+                    main.defaultSourceSet {
+                        if (konanTarget.family != Family.MINGW) {
+                            dependsOn(common.defaultSourceSet)
+                            dependsOn(posix.defaultSourceSet)
+                        } else {
+                            dependsOn(common.defaultSourceSet)
                         }
                     }
                 }
             }
             kotlinExtDsl.extensions.create("crossCompilation", CrossCompilationExtension::class.java, targets)
+            project.afterEvaluate {
+                if (targets.linuxX64Targets.isEmpty())
+                    throw GradleException(
+                        "You must specify a ${KonanTarget.LINUX_X64} target to configure cross compilation."
+                    )
+            }
         }
     }
 }
@@ -61,10 +65,32 @@ open class CrossCompilationExtension(
     }
 }
 
+val NamedDomainObjectCollection<KotlinTarget>.linuxX64Targets
+    get() = withType(KotlinNativeTarget::class).matching { it.konanTarget == KonanTarget.LINUX_X64 }
+
+
+fun <T> NamedDomainObjectCollection<T>.firstOnly(block: T.() -> Unit) {
+    val configured = AtomicBoolean()
+    all {
+        if (configured.compareAndSet(false, true)) {
+            block()
+        } else throw GradleException(
+            "You can't specify more then one ${KonanTarget.LINUX_X64} target for cross compilation."
+        )
+    }
+}
+
 private fun NamedDomainObjectCollection<KotlinTarget>.configure(
     compilationName: String,
     block: KotlinNativeCompilation.() -> Unit
-) = withType(KotlinNativeTarget::class)
-    .matching { it.konanTarget == KonanTarget.LINUX_X64 }.all {
-        compilations.findByName(compilationName)?.apply(block)
+) = linuxX64Targets.all {
+    compilations[compilationName].apply(block)
+}
+
+private fun KotlinNativeCompilation.setCommonSources() {
+    defaultSourceSet {
+        val srcRoot = "src/${compilationName}Native"
+        kotlin.setSrcDirs(listOf("$srcRoot/kotlin"))
+        resources.setSrcDirs(listOf("$srcRoot/resources"))
     }
+}
