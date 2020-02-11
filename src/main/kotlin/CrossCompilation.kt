@@ -29,9 +29,8 @@ class CrossCompilation : Plugin<Project> {
                 val posix = compilations.create(POSIX)
                 common.setCommonSources()
                 posix.setCommonSources()
-                posix.associateWith(common)
-                mainCompilation.associateWith(posix)
-                targets.nativeTargets { konanTarget != KonanTarget.LINUX_X64 }.all {
+                posix.defaultSourceSet.dependsOn(common.defaultSourceSet)
+                targets.nativeTargets().all {
                     mainCompilation.defaultSourceSet {
                         if (konanTarget.family != Family.MINGW) {
                             dependsOn(common.defaultSourceSet)
