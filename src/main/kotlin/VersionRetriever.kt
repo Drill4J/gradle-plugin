@@ -13,7 +13,7 @@ class VersionRetriever : Plugin<Project> {
         if (version == Project.DEFAULT_VERSION) {
             version = System.getenv(GITHUB_REF)?.let(TAG_REF_REGEX::matchEntire)?.run {
                 val (_, tagVersion) = groupValues
-                tagVersion
+                tagVersion.toSemVer() ?: tagVersion
             } ?: run {
                 val gitVersion by GitVersionDelegateProvider(rootProject)
                 gitVersion

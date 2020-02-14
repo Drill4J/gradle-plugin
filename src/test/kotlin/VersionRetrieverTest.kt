@@ -104,11 +104,24 @@ class VersionRetrieverTest {
     }
 
     @Test
-    fun `empty repo - version from GITHUB_REF`() {
-        val version = "github1.0.0"
+    fun `empty repo - custom version from GITHUB_REF`() {
+        val version = "custom123"
         val output = GradleRunner.create()
             .withProjectDir(projectDir.root)
             .withEnvironment(mapOf("GITHUB_REF" to "refs/tags/$version"))
+            .withGradleVersion("6.0.1")
+            .withPluginClasspath()
+            .build().output
+        println(output)
+        assertTrue(output.contains("version: '$version'"))
+    }
+
+    @Test
+    fun `empty repo - semver with v prefix from GITHUB_REF`() {
+        val version = "1.0.0-custom"
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withEnvironment(mapOf("GITHUB_REF" to "refs/tags/v$version"))
             .withGradleVersion("6.0.1")
             .withPluginClasspath()
             .build().output
