@@ -10,6 +10,7 @@ import java.util.concurrent.*
 import kotlin.test.*
 
 
+@Suppress("UnstableApiUsage")
 class VersionRetrieverTest {
     private val projectVersion = System.getProperty("project.version")
 
@@ -87,6 +88,32 @@ class VersionRetrieverTest {
             .build().output
         println(output)
         assertTrue(output.contains("version: '0.1.0-0'"))
+    }
+
+    @Test
+    fun `empty repo - version from args`() {
+        val version = "args1.0"
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withArguments("-Pversion=$version", "build")
+            .withGradleVersion("6.0.1")
+            .withPluginClasspath()
+            .build().output
+        println(output)
+        assertTrue(output.contains("version: '$version'"))
+    }
+
+    @Test
+    fun `empty repo - version from GITHUB_REF`() {
+        val version = "github1.0.0"
+        val output = GradleRunner.create()
+            .withProjectDir(projectDir.root)
+            .withEnvironment(mapOf("GITHUB_REF" to "refs/tags/$version"))
+            .withGradleVersion("6.0.1")
+            .withPluginClasspath()
+            .build().output
+        println(output)
+        assertTrue(output.contains("version: '$version'"))
     }
 
     @Test
