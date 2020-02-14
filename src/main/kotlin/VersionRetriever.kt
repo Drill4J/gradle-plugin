@@ -7,18 +7,21 @@ import org.gradle.kotlin.dsl.*
 class VersionRetriever : Plugin<Project> {
 
     override fun apply(target: Project): Unit = with(target) {
-        val gitVersion: SimpleSemVer by GitVersionDelegateProvider(rootProject)
-        version = gitVersion
+        if (!hasProperty("version")) {
+            val gitVersion: SimpleSemVer by GitVersionDelegateProvider(rootProject)
+            version = gitVersion
+            tasks {
+                register("printReleaseVersion") {
+                    group = "version"
+                    doLast { println(gitVersion.copy(suffix = "")) }
+                }
+            }
+        }
 
-        target.tasks {
+        tasks {
             register("printVersion") {
                 group = "version"
-                doLast { println(gitVersion) }
-            }
-
-            register("printReleaseVersion") {
-                group = "version"
-                doLast { println(gitVersion.copy(suffix = "")) }
+                doLast { println(version) }
             }
         }
     }
