@@ -10,8 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Check
-        run: gradle build
       - name: Publish
         run: |
           gradle publish
