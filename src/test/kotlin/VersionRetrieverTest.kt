@@ -167,6 +167,20 @@ class VersionRetrieverTest {
         assertEquals("0.3.0-0", taskOutput)
     }
 
+
+    @Test
+    fun `print version after custom suffix - rc1`() {
+        firstCommit()
+        git.randomCommit()
+        git.tag("v0.2.0-55")
+        git.tag("v0.2.0-rc1")
+        git.randomCommit()
+        val output = runTaskQuietly("printVersion")
+        println(output)
+        val taskOutput = output.outputLine()
+        assertEquals("0.2.0-56", taskOutput)
+    }
+
     private fun runTaskQuietly(task: String): String {
         return GradleRunner.create()
             .withProjectDir(projectDir.root)
