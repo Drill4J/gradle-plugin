@@ -11,5 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Check
-        run: |
-          gradle check
+        run: gradle check
