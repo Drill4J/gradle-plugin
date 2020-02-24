@@ -17,6 +17,7 @@ dependencies {
     implementation(gradleApi())
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("gradle-plugin"))
+    implementation("com.epam.drill:semver:0.4.0")
 
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit"))

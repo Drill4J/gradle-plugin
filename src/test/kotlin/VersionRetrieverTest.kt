@@ -15,7 +15,7 @@ class VersionRetrieverTest {
     private val projectVersion = System.getProperty("project.version")
 
     private val builder = BuildScriptBuilder(projectVersion)
-    private val firstTag = SimpleSemVer(0, 1, 0)
+    private val firstTag = "0.1.0"
     private lateinit var buildGradleFile: File
     private lateinit var srcDir: File
     private lateinit var git: Git
@@ -125,27 +125,6 @@ class VersionRetrieverTest {
     }
 
     @Test
-    fun `print release version for new commit`() {
-        firstCommit()
-        git.randomCommit()
-        val output = runTaskQuietly("printReleaseVersion")
-        println(output)
-        val taskOutput = output.outputLine()
-        assertEquals("0.2.0", taskOutput)
-    }
-
-    @Test
-    fun `print release version for tagged commit`() {
-        firstCommit()
-        git.randomCommit()
-        git.tag("0.2.0-0")
-        val output = runTaskQuietly("printReleaseVersion")
-        println(output)
-        val taskOutput = output.outputLine()
-        assertEquals("0.2.0", taskOutput)
-    }
-
-    @Test
     fun `ignore non-version tags - current version`() {
         firstCommit()
         git.randomCommit()
@@ -153,29 +132,6 @@ class VersionRetrieverTest {
         git.tag("sometag")
         val version = runTaskQuietly("printVersion").outputLine()
         assertEquals("0.2.0-0", version)
-    }
-
-
-    @Test
-    fun `ignore non-version tags - release version`() {
-        firstCommit()
-        git.randomCommit()
-        git.tag("v0.2.0-0")
-        git.tag("something0.3.0")
-        git.tag("sometag")
-        val version = runTaskQuietly("printReleaseVersion").outputLine()
-        assertEquals("0.2.0", version)
-    }
-
-    @Test
-    fun `print release version for tagged commit - v prefix`() {
-        firstCommit()
-        git.randomCommit()
-        git.tag("v0.2.0-0")
-        val output = runTaskQuietly("printReleaseVersion")
-        println(output)
-        val taskOutput = output.outputLine()
-        assertEquals("0.2.0", taskOutput)
     }
 
     @Test
@@ -220,7 +176,7 @@ class VersionRetrieverTest {
         git.add().addFilepattern(".").call()
         git.commit().setMessage("first commit").call()
 
-        git.tag(firstTag.toString())
+        git.tag(firstTag)
     }
 }
 

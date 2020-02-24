@@ -60,6 +60,7 @@ class BuildScriptBuilder(val pluginVersion: String) {
     private fun Builder.repositories() {
         block("repositories") {
             line("mavenLocal()")
+            mavenRepo("https://oss.jfrog.org/oss-release-local")
             line("jcenter()")
             line("mavenCentral()")
         }
