@@ -66,11 +66,8 @@ class VersionRetrieverTest {
     fun `no repo - default version`() {
         val deleted = projectDir.root.resolve(".git").deleteRecursively()
         assertTrue(actual = deleted, message = "Error deleting .git dir")
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
+        val output = gradleRunner()
             .withArguments("build")
-            .withGradleVersion("6.0.1")
-            .withPluginClasspath()
             .withDebug(true)
             .build().output
         println(output)
@@ -79,12 +76,9 @@ class VersionRetrieverTest {
 
     @Test
     fun `empty repo - default version`() {
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
-            .withArguments("build")
-            .withGradleVersion("6.0.1")
-            .withPluginClasspath()
+        val output = gradleRunner()
             .withDebug(true)
+            .withArguments("build")
             .build().output
         println(output)
         assertTrue(output.contains("version: '0.1.0-0'"))
@@ -93,11 +87,8 @@ class VersionRetrieverTest {
     @Test
     fun `empty repo - version from args`() {
         val version = "args1.0"
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
+        val output = gradleRunner()
             .withArguments("-Pversion=$version", "build")
-            .withGradleVersion("6.0.1")
-            .withPluginClasspath()
             .build().output
         println(output)
         assertTrue(output.contains("version: '$version'"))
@@ -106,11 +97,8 @@ class VersionRetrieverTest {
     @Test
     fun `empty repo - custom version from GITHUB_REF`() {
         val version = "custom123"
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
+        val output = gradleRunner()
             .withEnvironment(mapOf("GITHUB_REF" to "refs/tags/$version"))
-            .withGradleVersion("6.0.1")
-            .withPluginClasspath()
             .build().output
         println(output)
         assertTrue(output.contains("version: '$version'"))
@@ -119,11 +107,8 @@ class VersionRetrieverTest {
     @Test
     fun `empty repo - semver with v prefix from GITHUB_REF`() {
         val version = "1.0.0-custom"
-        val output = GradleRunner.create()
-            .withProjectDir(projectDir.root)
+        val output = gradleRunner()
             .withEnvironment(mapOf("GITHUB_REF" to "refs/tags/v$version"))
-            .withGradleVersion("6.0.1")
-            .withPluginClasspath()
             .build().output
         println(output)
         assertTrue(output.contains("version: '$version'"))
@@ -222,12 +207,14 @@ class VersionRetrieverTest {
     }
 
     private fun runTaskQuietly(task: String): String {
-        return GradleRunner.create()
-            .withProjectDir(projectDir.root)
-            .withPluginClasspath()
+        return gradleRunner()
             .withArguments("-q", task)
             .build().output
     }
+
+    private fun gradleRunner() = GradleRunner.create()
+        .withProjectDir(projectDir.root)
+        .withPluginClasspath()
 
     private fun firstCommit() {
         git.add().addFilepattern(".").call()
