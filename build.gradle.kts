@@ -4,23 +4,27 @@ plugins {
     `maven-publish`
 }
 
-apply(from = "gradle/git-version.gradle.kts")
+val scriptUrl: String by extra
+
+apply(from = "$scriptUrl/git-version.gradle.kts")
 
 repositories {
     mavenLocal()
-    apply(from = "gradle/maven-repo.gradle.kts")
+    apply(from = "$scriptUrl/maven-repo.gradle.kts")
     jcenter()
 }
 
-dependencies {
-    implementation(platform(kotlin("bom", version = "1.3.61")))
-    implementation(gradleApi())
-    implementation(kotlin("stdlib-jdk8"))
-    implementation(kotlin("gradle-plugin"))
-    implementation("com.epam.drill:semver:0.4.0")
+val kotlinVersion: String by extra
+val semverVersion: String by extra
 
-    testImplementation(kotlin("test"))
-    testImplementation(kotlin("test-junit"))
+dependencies {
+    implementation(gradleApi())
+    implementation(kotlin("stdlib-jdk8", kotlinVersion))
+    implementation(kotlin("gradle-plugin", kotlinVersion))
+    implementation("com.epam.drill:semver:$semverVersion")
+
+    testImplementation(kotlin("test", kotlinVersion))
+    testImplementation(kotlin("test-junit", kotlinVersion))
     testImplementation("org.eclipse.jgit:org.eclipse.jgit:5.5.0.201909110433-r")
     testImplementation(gradleTestKit())
 }
