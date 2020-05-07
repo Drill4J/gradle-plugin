@@ -15,11 +15,13 @@ class VersionRetriever : Plugin<Project> {
             version = System.getenv(GITHUB_REF)?.let(TAG_REF_REGEX::matchEntire)?.run {
                 val (_, tagVersion) = groupValues
                 tagVersion.toSemVer().takeIf { it != UNSPECIFIED } ?: tagVersion
-            } ?: git(
-                "describe", "--tags", "--long",
-                "--match", "[0-9]*.[0-9]*.[0-9]*",
-                "--match", "v[0-9]*.[0-9]*.[0-9]*"
-            )?.prereleaseFromGit() ?: "0.1.0-0".toSemVer()
+            } ?: takeIf(::hasGitTags)?.run {
+                git(
+                    "describe", "--tags", "--long",
+                    "--match", "[0-9]*.[0-9]*.[0-9]*",
+                    "--match", "v[0-9]*.[0-9]*.[0-9]*"
+                )?.prereleaseFromGit()
+            } ?: "0.1.0-0".toSemVer()
         }
 
         target.tasks {
@@ -30,6 +32,10 @@ class VersionRetriever : Plugin<Project> {
         }
     }
 }
+
+internal fun hasGitTags(project: Project) = project.rootProject.run {
+    fileTree(".git") { include("refs/tags/*") }
+}.any()
 
 internal fun Project.git(vararg args: String): String? {
     val output = ByteArrayOutputStream()
