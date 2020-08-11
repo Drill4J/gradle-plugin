@@ -19,7 +19,7 @@ val semverVersion: String by extra
 
 dependencies {
     implementation(gradleApi())
-    implementation(kotlin("stdlib-jdk8", kotlinVersion))
+    implementation(kotlin("native-utils", kotlinVersion))
     implementation(kotlin("gradle-plugin", kotlinVersion))
     implementation("com.epam.drill:semver:$semverVersion")
 
