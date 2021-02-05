@@ -1,4 +1,6 @@
 /build/
 /build-cache/
-/.idea/
+**/.idea/*
+!/.idea/codeStyles
+!/.idea/fileTemplates
 /.gradle/
